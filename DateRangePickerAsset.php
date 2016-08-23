@@ -29,7 +29,7 @@ class DateRangePickerAsset extends AssetBundle
 		Yii::setAlias('@daterangepicker', __DIR__);
 
 		foreach (static::$extra_js as $js_file) {
-			$this->js[]= $js_file;
+			array_unshift($this->js, $js_file);
 		}
 
 		return parent::init();

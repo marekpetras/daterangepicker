@@ -7,6 +7,8 @@
 namespace marekpetras\daterangepicker;
 
 use Yii;
+use DateTime;
+use DateInterval;
 use yii\base\Model;
 use yii\web\View;
 use yii\helpers\Html;
@@ -17,25 +19,25 @@ use yii\helpers\ArrayHelper;
 
 class DateRangePicker extends Widget
 {
-	/**
-	 * @var string $selector
-	 */
-	public $selector;
+    /**
+     * @var string $selector
+     */
+    public $selector;
 
-	/**
-	 * @var string JS Callback for Daterange picker
-	 */
-	public $callback;
+    /**
+     * @var string JS Callback for Daterange picker
+     */
+    public $callback;
 
-	/**
-	 * @var array Options to be passed to daterange picker
-	 */
-	public $options = [];
+    /**
+     * @var array Options to be passed to daterange picker
+     */
+    public $options = [];
 
-	/**
-	 * @var array the HTML attributes for the widget container.
-	 */
-	public $htmlOptions = [];
+    /**
+     * @var array the HTML attributes for the widget container.
+     */
+    public $htmlOptions = [];
 
     /**
      * @var array the default HTML attributes for the widget container.
@@ -53,9 +55,19 @@ class DateRangePicker extends Widget
     ];
 
     /**
+     * @var array display date javascript format
+     */
+    public $displayFormat = 'D MMMM YYYY';
+
+    /**
+     * @var array request date javascript format
+     */
+    public $requestFormat = 'YYYY-MM-DD';
+
+    /**
      * @var bool whether to include moment.js
      */
-	public $moment = true;
+    public $moment = true;
 
     /**
      * @var bool whether to add hidden inputs to store range values
@@ -82,16 +94,16 @@ class DateRangePicker extends Widget
      */
     public $inputToId       = 'dateTo';
 
-	/**
-	 * Initializes the widget.
-	 * If you override this method, make sure you call the parent implementation first.
-	 */
-	public function init()
-	{
-		//checks for the element id
-		if (!isset($this->htmlOptions['id'])) {
-			$this->htmlOptions['id'] = $this->getId();
-		}
+    /**
+     * Initializes the widget.
+     * If you override this method, make sure you call the parent implementation first.
+     */
+    public function init()
+    {
+        //checks for the element id
+        if (!isset($this->htmlOptions['id'])) {
+            $this->htmlOptions['id'] = $this->getId();
+        }
 
         if ( !isset($this->options['ranges']) ) { $this->options['ranges'] = new JsExpression("{
                     'Today'        : [Date.today(), Date.today()],
@@ -108,57 +120,69 @@ class DateRangePicker extends Widget
 
         if ( !$this->callback ) {
             $this->callback = new JsExpression("function(start, end, label){
-                console.log('select new',start.format('YYYY-MM-DD'),end.format('YYYY-MM-DD'));
-                $('#".$this->inputFromId."').val(start.format('YYYY-MM-DD'));
-                $('#".$this->inputToId."').val(end.format('YYYY-MM-DD'));
-                $('#".$this->id."').val(start.format('D MMMM YYYY') + ' - ' + end.format('D MMMM YYYY'));
+                $('#".$this->inputFromId."').val(start.format('".$this->requestFormat."'));
+                $('#".$this->inputToId."').val(end.format('".$this->requestFormat."'));
+                $('#".$this->id."').val(start.format('".$this->displayFormat."') + ' - ' + end.format('".$this->displayFormat."'));
             }");
+        }
+
+        if ( $this->displayFormat && !isset($this->options['locale']['format']) ) {
+            $this->defaultOptions['locale']['format'] = $this->displayFormat;
+        }
+
+        if ( !isset($this->options['startDate']) ) {
+            $this->options['startDate'] = new JsExpression('Date.today().add({ days: -7 })');
+        }
+
+        if ( !isset($this->options['endDate']) ) {
+            $this->options['endDate'] = new JsExpression('Date.today().add({ days: -1 })');
         }
 
         $this->htmlOptions = ArrayHelper::merge($this->defaultHtmlOptions, $this->htmlOptions);
         $this->options = ArrayHelper::merge($this->defaultOptions, $this->options);
 
-		parent::init();
-	}
 
-	/**
-	 * Renders the widget.
-	 */
-	public function run()
-	{
-		$this->registerPlugin();
-	}
+        parent::init();
+    }
 
-	protected function registerPlugin()
-	{
-		if ($this->moment) {
-			DateRangePickerAsset::$extra_js[] = defined('YII_DEBUG') && YII_DEBUG ? 'bootstrap-daterangepicker/moment.js' : 'bootstrap-daterangepicker/moment.min.js';
-		}
+    /**
+     * Renders the widget.
+     */
+    public function run()
+    {
+        $this->registerPlugin();
+    }
 
-		if ($this->selector) {
-			$this->registerJs($this->selector, $this->options, $this->callback);
-		}
+    protected function registerPlugin()
+    {
+        if ($this->moment) {
+            DateRangePickerAsset::$extra_js[] = defined('YII_DEBUG') && YII_DEBUG ? 'bootstrap-daterangepicker/moment.js' : 'bootstrap-daterangepicker/moment.min.js';
+        }
+
+        if ($this->selector) {
+            $this->registerJs($this->selector, $this->options, $this->callback);
+        }
         else {
-			$id = $this->htmlOptions['id'];
-			echo Html::tag('input', '', $this->htmlOptions);
+            $id = $this->htmlOptions['id'];
+            echo Html::tag('input', '', $this->htmlOptions);
 
             if ( $this->addInputs ) {
                 echo Html::hiddenInput($this->inputFromName,'',['id'=>$this->inputFromId]);
                 echo Html::hiddenInput($this->inputToName,'',['id'=>$this->inputToId]);
             }
 
-			$this->registerJs("#{$id}", $this->options, $this->callback);
-		}
-	}
+            $this->registerJs("#{$id}", $this->options, $this->callback);
+        }
+    }
 
-	protected function registerJs($selector, $options, $callback)
+    protected function registerJs($selector, $options, $callback)
     {
-		$view = $this->getView();
+        $view = $this->getView();
 
-		DateRangePickerAsset::register($view);
+        DateRangePickerAsset::register($view);
 
-		$js   = [];
-		$js[] = '$("' . $selector . '").daterangepicker(' . Json::encode($options) . ($callback ? ', ' . Json::encode($callback) : '') . ');';
-		$view->registerJs(implode("\n", $js),View::POS_READY);
-	}
+        $js   = [];
+        $js[] = '$("' . $selector . '").daterangepicker(' . Json::encode($options) . ($callback ? ', ' . Json::encode($callback) : '') . ');';
+        $view->registerJs(implode("\n", $js),View::POS_READY);
+    }
 }
