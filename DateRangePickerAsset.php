@@ -1,6 +1,7 @@
 <?php
 /**
- * @author Bogdan Burim <bgdn2007@ukr.net> 
+ * @author Bogdan Burim <bgdn2007@ukr.net>
+ * @author Marek Petras <mark@markpetras.eu>
  */
 
 namespace bburim\daterangepicker;
@@ -26,11 +27,11 @@ class DateRangePickerAsset extends AssetBundle
 	public $sourcePath = '@daterangepicker/assets';
 
 	public $css = [
-		'daterangepicker-bs3.css'
+		'bootstrap-daterangepicker/daterangepicker.css'
 	];
 
 	public $js = [
-		'daterangepicker.js',
+		'bootstrap-daterangepicker/daterangepicker.js',
 		'date.js',
 	];
 

@@ -1,9 +1,10 @@
 <?php
 /**
- * @author Bogdan Burim <bgdn2007@ukr.net> 
+ * @author Bogdan Burim <bgdn2007@ukr.net>
+ * @author Marek Petras <mark@markpetras.eu>
  */
 
-namespace bburim\daterangepicker;
+namespace marekpetras\daterangepicker;
 
 use Yii;
 use yii\base\Model;
@@ -11,15 +12,15 @@ use yii\web\View;
 use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\base\Widget as Widget;
+use yii\web\JsExpression;
+use yii\helpers\ArrayHelper;
 
 class DateRangePicker extends Widget
 {
-
 	/**
 	 * @var string $selector
 	 */
 	public $selector;
-
 	/**
 	 * @var string JS Callback for Daterange picker
 	 */
@@ -32,10 +33,28 @@ class DateRangePicker extends Widget
 	 * @var array the HTML attributes for the widget container.
 	 */
 	public $htmlOptions = [];
-
-
+    /**
+     * @var array the default HTML attributes for the widget container.
+     */
+    public $defaultHtmlOptions     = [
+        'placeholder' => 'Select a daterange...',
+        'class' => 'form-control',
+    ];
+    /**
+     * @var array the default Options to be passed to daterange picker
+     */
+    public $defaultOptions = [
+        'alwaysShowCalendars' => true,
+    ];
+    /**
+     * @var bool whether to include moment.js
+     */
 	public $moment = true;
 
+    /**
+     * @var bool whether to add hidden inputs to store range values
+     */
+    public $addInputs = true;
 	/**
 	 * Initializes the widget.
 	 * If you override this method, make sure you call the parent implementation first.
@@ -46,6 +65,32 @@ class DateRangePicker extends Widget
 		if (!isset($this->htmlOptions['id'])) {
 			$this->htmlOptions['id'] = $this->getId();
 		}
+
+        if ( !isset($this->options['ranges']) ) { $this->options['ranges'] = new JsExpression("{
+                    'Today'        : [Date.today(), Date.today()],
+                    'Yesterday'    : [Date.today().add({ days: -1 }), Date.today().add({ days: -1 })],
+                    'Last 7 Days'  : [Date.today().add({ days: -7 }), Date.today().add({ days: -1 })],
+                    'Last 30 Days' : [Date.today().add({ days: -30 }), Date.today().add({ days: -1 })],
+                    'Last Month'   : [Date.today().moveToFirstDayOfMonth().add({ months: -1 }), Date.today().moveToFirstDayOfMonth().add({ days: -1 })],
+                    'Month to Date': [Date.today().moveToFirstDayOfMonth(), Date.today().add({ days: -1 })],
+                    'Current Month': [Date.today().moveToFirstDayOfMonth(), Date.today().moveToLastDayOfMonth()],
+                    'Year to Date' : [Date.today().moveToMonth(0,-1).moveToFirstDayOfMonth(), Date.today()],
+                    'Current Year' : [Date.today().moveToMonth(0,-1).moveToFirstDayOfMonth(), Date.today().moveToMonth(11).moveToLastDayOfMonth()]
+                }");
+        }
+
+        if ( !$this->callback ) {
+            $this->callback = new JsExpression("function(start, end, label){
+                console.log('select new',start.format('YYYY-MM-DD'),end.format('YYYY-MM-DD'));
+                $('#".$this->inputFromId."').val(start.format('YYYY-MM-DD'));
+                $('#".$this->inputToId."').val(end.format('YYYY-MM-DD'));
+                $('#".$this->id."').val(start.format('D MMMM YYYY') + ' - ' + end.format('D MMMM YYYY'));
+            }");
+        }
+
+        $this->htmlOptions = ArrayHelper::merge($this->defaultHtmlOptions, $this->htmlOptions);
+        $this->options = ArrayHelper::merge($this->defaultOptions, $this->options);
+
 		parent::init();
 	}
 
@@ -59,24 +104,28 @@ class DateRangePicker extends Widget
 
 	protected function registerPlugin()
 	{
-
 		if ($this->moment) {
-			DateRangePickerAsset::$extra_js[] = defined('YII_DEBUG') && YII_DEBUG ? 'moment.js' : 'moment.min.js';
+			DateRangePickerAsset::$extra_js[] = defined('YII_DEBUG') && YII_DEBUG ? 'bootstrap-daterangepicker/moment.js' : 'bootstrap-daterangepicker/moment.min.js';
 		}
 
-		if ($this->selector)
-		{
+		if ($this->selector) {
 			$this->registerJs($this->selector, $this->options, $this->callback);
-		} else {
+		}
+        else {
 			$id = $this->htmlOptions['id'];
 			echo Html::tag('input', '', $this->htmlOptions);
+
+            if ( $this->addInputs ) {
+                echo Html::hiddenInput($this->inputFromName,'',['id'=>$this->inputFromId]);
+                echo Html::hiddenInput($this->inputToName,'',['id'=>$this->inputToId]);
+            }
+
 			$this->registerJs("#{$id}", $this->options, $this->callback);
 		}
-
-
 	}
 
-	protected function registerJs($selector, $options, $callback) {
+	protected function registerJs($selector, $options, $callback)
+    {
 		$view = $this->getView();
 
 		DateRangePickerAsset::register($view);
@@ -84,7 +133,5 @@ class DateRangePicker extends Widget
 		$js   = [];
 		$js[] = '$("' . $selector . '").daterangepicker(' . Json::encode($options) . ($callback ? ', ' . Json::encode($callback) : '') . ');';
 		$view->registerJs(implode("\n", $js),View::POS_READY);
-
 	}
 }
-
