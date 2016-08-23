@@ -21,18 +21,22 @@ class DateRangePicker extends Widget
 	 * @var string $selector
 	 */
 	public $selector;
+
 	/**
 	 * @var string JS Callback for Daterange picker
 	 */
 	public $callback;
+
 	/**
 	 * @var array Options to be passed to daterange picker
 	 */
 	public $options = [];
+
 	/**
 	 * @var array the HTML attributes for the widget container.
 	 */
 	public $htmlOptions = [];
+
     /**
      * @var array the default HTML attributes for the widget container.
      */
@@ -40,12 +44,14 @@ class DateRangePicker extends Widget
         'placeholder' => 'Select a daterange...',
         'class' => 'form-control',
     ];
+
     /**
      * @var array the default Options to be passed to daterange picker
      */
     public $defaultOptions = [
         'alwaysShowCalendars' => true,
     ];
+
     /**
      * @var bool whether to include moment.js
      */
@@ -55,6 +61,27 @@ class DateRangePicker extends Widget
      * @var bool whether to add hidden inputs to store range values
      */
     public $addInputs = true;
+
+    /**
+     * @var string start date hidden input name
+     */
+    public $inputFromName   = 'DateFrom';
+
+    /**
+     * @var string end date hidden input name
+     */
+    public $inputToName     = 'DateTo';
+
+    /**
+     * @var string start date hidden input id
+     */
+    public $inputFromId     = 'dateFrom';
+
+    /**
+     * @var string end date hidden input id
+     */
+    public $inputToId       = 'dateTo';
+
 	/**
 	 * Initializes the widget.
 	 * If you override this method, make sure you call the parent implementation first.
