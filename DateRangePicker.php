@@ -52,6 +52,7 @@ class DateRangePicker extends Widget
      */
     public $defaultOptions = [
         'alwaysShowCalendars' => true,
+        'autoApply' => true,
     ];
 
     /**
@@ -77,26 +78,35 @@ class DateRangePicker extends Widget
     /**
      * @var string start date hidden input name
      */
-    public $inputFromName   = 'DateFrom';
+    public $inputFromName = 'DateFrom';
 
     /**
      * @var string end date hidden input name
      */
-    public $inputToName     = 'DateTo';
+    public $inputToName = 'DateTo';
+
+    /**
+     * @var string default start date for hidden input
+     */
+    public $inputFromDefault;
 
     /**
      * @var string start date hidden input id
      */
-    public $inputFromId     = 'dateFrom';
+    public $inputFromId = 'dateFrom';
 
     /**
      * @var string end date hidden input id
      */
-    public $inputToId       = 'dateTo';
+    public $inputToId = 'dateTo';
 
     /**
-     * Initializes the widget.
-     * If you override this method, make sure you call the parent implementation first.
+     * @var string default end date for hidden input
+     */
+    public $inputToDefault;
+
+    /**
+     * @inheritdoc
      */
     public function init()
     {
@@ -146,7 +156,7 @@ class DateRangePicker extends Widget
     }
 
     /**
-     * Renders the widget.
+     * @inheritdoc
      */
     public function run()
     {
@@ -163,15 +173,22 @@ class DateRangePicker extends Widget
             $this->registerJs($this->selector, $this->options, $this->callback);
         }
         else {
+
+            // render the date range input field
             $id = $this->htmlOptions['id'];
             echo Html::tag('input', '', $this->htmlOptions);
-
-            if ( $this->addInputs ) {
-                echo Html::hiddenInput($this->inputFromName,'',['id'=>$this->inputFromId]);
-                echo Html::hiddenInput($this->inputToName,'',['id'=>$this->inputToId]);
-            }
-
             $this->registerJs("#{$id}", $this->options, $this->callback);
+
+            // render hidden inputs and fill them with default values
+            if ( $this->addInputs ) {
+                echo Html::hiddenInput($this->inputFromName,$this->inputFromDefault,['id'=>$this->inputFromId]);
+                echo Html::hiddenInput($this->inputToName,$this->inputToDefault,['id'=>$this->inputToId]);
+
+                $this->getView()->registerJs("
+                    $('#".$this->inputFromId."').val($('#" . $id . "').data('daterangepicker').startDate.format('".$this->requestFormat."'));
+                    $('#".$this->inputToId."').val($('#" . $id . "').data('daterangepicker').endDate.format('".$this->requestFormat."'));
+                ");
+            }
         }
     }
 
